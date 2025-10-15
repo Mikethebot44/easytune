@@ -1,0 +1,17 @@
+README.md
+setup.py
+easytune/__init__.py
+easytune/datasets.py
+easytune/finetuner.py
+easytune/losses.py
+easytune/models.py
+easytune/utils.py
+easytune.egg-info/PKG-INFO
+easytune.egg-info/SOURCES.txt
+easytune.egg-info/dependency_links.txt
+easytune.egg-info/requires.txt
+easytune.egg-info/top_level.txt
+tests/test_datasets.py
+tests/test_finetuner.py
+tests/test_losses.py
+tests/test_utils.py

@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: easytune
+Version: 0.1.0
+Summary: Lightweight fine-tuning for image/text embedding models
+Author: EasyTune Contributors
+Requires-Python: >=3.8
+Requires-Dist: torch>=2.0
+Requires-Dist: transformers>=4.30
+Requires-Dist: datasets>=2.14
+Requires-Dist: tqdm>=4.65
+Requires-Dist: pillow>=9.0
+Requires-Dist: numpy>=1.23
+Requires-Dist: pandas>=1.5
+Requires-Dist: torchvision>=0.15
+Dynamic: author
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
