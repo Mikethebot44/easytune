@@ -37,3 +37,36 @@ pip install -e .
 - Uses a supervised NT-Xent contrastive loss.
 - Automatic train/validation split with stratification.
 - Runs on CPU or GPU automatically.
+
+## Cloud (Optional)
+
+You can run training on a cloud GPU without changing your code using the optional Modal backend (no AWS required).
+
+1) Install Modal CLI and authenticate:
+
+```bash
+pip install modal
+modal token new
+```
+
+2) Create or point to a local dataset directory (for image tasks it expects class subfolders).
+
+3) Run via the provided example (downloads artifacts to `./cloud_artifacts`):
+
+```bash
+modal run examples/remote/modal_easytune.py --data-dir ./dataset --out-dir ./cloud_artifacts --model facebook/dinov2-base --task image-similarity
+```
+
+Or invoke programmatically through the SDK convenience method:
+
+```python
+from easytune.finetuner import FineTuner
+from easytune.cloud.modal_backend import ModalBackend
+
+tuner = FineTuner(model="facebook/dinov2-base", task="image-similarity")
+tuner.train_remote(ModalBackend(), data_dir="./dataset", out_dir="./cloud_artifacts", epochs=5, batch_size=16, learning_rate=1e-5)
+```
+
+Notes:
+- Modal is optional and not installed by default; the backend uses the `modal` CLI.
+- To change GPU type/cost, pass `--gpu` to the example or `gpu="A10G"` to `ModalBackend`.

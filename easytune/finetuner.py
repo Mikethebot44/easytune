@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import time
 from dataclasses import asdict, dataclass
-from typing import Dict, List, Literal, Optional, Sequence, Tuple
+from typing import Dict, List, Literal, Optional, Sequence, Tuple, TYPE_CHECKING
 
 import torch
 from torch.optim import AdamW
@@ -31,6 +31,9 @@ from .utils import (
     warn_if_imbalanced,
     validate_files_exist,
 )
+
+if TYPE_CHECKING:  # typing-only to avoid runtime dependency on cloud subpackage
+    from .cloud import RemoteBackend
 
 
 TaskType = Literal["image-similarity", "text-similarity"]
@@ -294,6 +297,37 @@ class FineTuner:
         return tuner
 
     # ---------------------- Helpers ----------------------
+    def train_remote(
+        self,
+        backend: "RemoteBackend",  # type: ignore[name-defined]
+        data_dir: str,
+        out_dir: str,
+        *,
+        epochs: int = 5,
+        batch_size: int = 16,
+        learning_rate: float = 1e-5,
+        gpu: Optional[str] = None,
+        timeout_s: int = 3600,
+    ) -> None:
+        """Delegate training to a remote backend.
+
+        The backend is responsible for executing training in a remote environment
+        and materializing artifacts to the provided out_dir on the local machine.
+        """
+        if backend is None:
+            raise ValueError("Remote backend is required")
+        backend.train(
+            model=self.model_name,
+            task=self.task,
+            data_dir=data_dir,
+            epochs=epochs,
+            batch_size=batch_size,
+            learning_rate=learning_rate,
+            out_dir=out_dir,
+            gpu=gpu,
+            timeout_s=timeout_s,
+        )
+
     def _build_dataloaders(
         self, X_train: Sequence, y_train: Sequence[int], X_val: Sequence, y_val: Sequence[int], batch_size: int
     ) -> Tuple[DataLoader, Optional[DataLoader]]:
