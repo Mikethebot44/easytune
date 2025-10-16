@@ -38,6 +38,16 @@ pip install -e .
 - Automatic train/validation split with stratification.
 - Runs on CPU or GPU automatically.
 
+## Inference (2 lines)
+
+```python
+from easytune import EasyModel, SimpleIndex
+m = EasyModel.load('./cloud_artifacts/latest')             # or a local save dir
+E = m.embed_images(['a.jpg','b.jpg','c.jpg'])             # or m.embed_texts([...])
+idx = SimpleIndex.from_embeddings(E, ids=['a','b','c'])
+print(idx.search(m.embed_images(['query.jpg']), k=3))
+```
+
 ## Cloud (Optional)
 
 You can run training on a cloud GPU without changing your code using the optional Modal backend (no AWS required).
