@@ -162,6 +162,17 @@ class FineTuner:
             f"Loaded {len(bundle.items)} images from folder; total {len(self._items)} samples"
         )
 
+    def add_from_folder_auto(self, folder_path: str, validation_split: float = 0.2) -> None:
+        """Detect class-root under a directory and add images.
+
+        Accepts a top-level dataset directory and automatically selects a
+        subfolder (e.g., train/) containing class subfolders if needed.
+        """
+        if self._adapter_type != "image":
+            raise ValueError("add_from_folder_auto is only valid for image models")
+        root = ds.detect_class_root(folder_path)
+        return self.add_from_folder(root, validation_split=validation_split)
+
     def add_from_huggingface(
         self, dataset_name: str, split: str = "train", max_samples: Optional[int] = None, validation_split: float = 0.2
     ) -> None:
@@ -180,6 +191,16 @@ class FineTuner:
         warn_if_imbalanced(self._labels)
         self._validation_split = validation_split
         print_info(f"Loaded {len(bundle.items)} samples from HF '{dataset_name}' (split={split})")
+
+    def add_from_kaggle(self, dataset_id: str, validation_split: float = 0.2) -> None:
+        """Download a Kaggle dataset (via kagglehub) and add images automatically.
+
+        Requires `kagglehub` to be installed in the environment.
+        """
+        if self._adapter_type != "image":
+            raise ValueError("add_from_kaggle is only valid for image models")
+        root = ds.kaggle_download_and_detect(dataset_id)
+        return self.add_from_folder(root, validation_split=validation_split)
 
     def train(
         self,

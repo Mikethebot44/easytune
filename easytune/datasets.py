@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
+from pathlib import Path
 
 from PIL import Image
 import torch
@@ -141,6 +142,63 @@ def load_from_huggingface(
         labels = labels[:max_samples]
 
     return DataBundle(items=list(items), labels=list(labels))
+
+
+# ---------------------- Convenience helpers for Quickstart UX ----------------------
+def detect_class_root(path: Union[str, Path]) -> str:
+    """Detect a directory containing class subfolders with images.
+
+    Handles either:
+    - root containing class subfolders directly, or
+    - root containing split subfolders (e.g., train/val/test) each with class dirs
+    Returns the detected directory path as a string.
+    """
+    p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(f"Path not found: {p}")
+
+    def has_images(dirpath: Path) -> bool:
+        for f in dirpath.glob("*"):
+            if f.is_file() and f.suffix.lower() in IMG_EXTS:
+                return True
+        return False
+
+    # Case 1: root already contains class subfolders with images
+    class_dirs = [d for d in p.iterdir() if d.is_dir() and has_images(d)]
+    if class_dirs:
+        return str(p)
+
+    # Case 2: root contains split subfolders with class dirs
+    for split in p.iterdir():
+        if not split.is_dir():
+            continue
+        class_dirs = [d for d in split.iterdir() if d.is_dir() and has_images(d)]
+        if class_dirs:
+            return str(split)
+
+    raise RuntimeError(
+        f"Could not detect a folder containing class subfolders with images under: {p}"
+    )
+
+
+def kaggle_download(dataset_id: str) -> str:
+    """Download a Kaggle dataset via kagglehub and return local directory.
+
+    Requires `kagglehub` to be installed by the user environment.
+    """
+    try:
+        import kagglehub  # type: ignore
+    except Exception as e:  # pragma: no cover - environment-dependent
+        raise RuntimeError(
+            "kagglehub is required to download Kaggle datasets: pip install kagglehub[hf-datasets]"
+        ) from e
+    return kagglehub.dataset_download(dataset_id)
+
+
+def kaggle_download_and_detect(dataset_id: str) -> str:
+    """Download a Kaggle dataset and detect a class-root usable by EasyTune."""
+    d = kaggle_download(dataset_id)
+    return detect_class_root(d)
 
 
 def build_splits(
