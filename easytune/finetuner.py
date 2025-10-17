@@ -67,11 +67,15 @@ class FineTuner:
         task: TaskType = "image-similarity",
         device: DeviceType = "auto",
         adapter: Optional[BaseAdapter] = None,
+        projection_dim: Optional[int] = None,
+        dropout: float = 0.0,
     ) -> None:
         self.model_name = model
         self.task: TaskType = task
         self.device_str: DeviceType = device
         self.device = self._resolve_device(device)
+        self._projection_dim: Optional[int] = projection_dim
+        self._dropout: float = dropout
 
         # Adapter (model + projection head)
         if adapter is not None:
@@ -81,11 +85,15 @@ class FineTuner:
             # Note: caller must ensure dataloaders provide appropriate batch keys
         else:
             if self.task == "image-similarity":
-                m, processor = load_image_model(self.model_name)
+                m, processor = load_image_model(
+                    self.model_name, projection_dim=self._projection_dim, dropout=self._dropout
+                )
                 self._adapter_type = "image"
                 self._processor = processor  # HF ImageProcessor
             elif self.task == "text-similarity":
-                m, tokenizer = load_text_model(self.model_name)
+                m, tokenizer = load_text_model(
+                    self.model_name, projection_dim=self._projection_dim, dropout=self._dropout
+                )
                 self._adapter_type = "text"
                 self._tokenizer = tokenizer  # HF Tokenizer
             else:
@@ -270,12 +278,17 @@ class FineTuner:
             "task": self.task,
             "adapter_type": self._adapter_type,
             "embedding_dim": getattr(self.adapter, "hidden_size", None),
+            "projection_dim": getattr(self.adapter, "projection_dim", self._projection_dim),
             "train_history": self._train_history,
             "best_val_loss": self._best_val_loss,
             "saved_at": int(time.time()),
             "easytune_version": "0.1.0",
         }
-        cfg = AdapterConfig(base_model_name=self.model_name, adapter_type=self._adapter_type)
+        cfg = AdapterConfig(
+            base_model_name=self.model_name,
+            adapter_type=self._adapter_type,
+            projection_dim=getattr(self.adapter, "projection_dim", self._projection_dim),
+        )
         save_json(os.path.join(path, "adapter_config.json"), asdict(cfg))
         save_json(os.path.join(path, "metadata.json"), meta)
         print_info(f"Model saved to: {path}")
